@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Virtual Assistant Chef</title>
+    <style>
+        /* Reset and base */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FFECB3 0%, #FFE0B2 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 18px;
+            line-height: 1.6;
+            padding: 60px 20px;
+            background-attachment: fixed;
+        }
+        h1 {
+            color: #FF6F00;
+            font-size: 40px;
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: 900;
+        }
+        h2 {
+            color: #BF360C;
+            font-size: 30px;
+            margin-bottom: 25px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .container {
+            width: 100%;
+            max-width: 720px;
+            padding: 35px 45px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.93);
+            box-shadow: 0 8px 25px rgba(178, 89, 2, 0.3);
+            border-radius: 25px;
+            border: 2px solid #FFB300;
+            margin-bottom: 45px;
+        }
+        .input-row {
+            margin-bottom: 22px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        input[type="text"] {
+            padding: 14px 18px;
+            border: 2.5px solid #FFB300;
+            border-radius: 45px;
+            font-size: 19px;
+            font-weight: 600;
+            flex: 1;
+            min-width: 220px;
+            color: #BF360C;
+            background-color: #FFF8E1;
+        }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 14px 28px;
+            cursor: pointer;
+            background-color: #FF6F00;
+            color: white;
+            border: none;
+            border-radius: 45px;
+            font-size: 19px;
+            font-weight: 700;
+            transition: background-color 0.3s ease;
+        }
+        button:hover, button:focus {
+            background-color: #E65100;
+        }
+        #loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #FF6F00;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 12px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Recipe Cards */
+        #recipes-container, #favorite-list {
+            width: 100%;
+            max-width: 1320px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .recipe-card {
+            background: #fff;
+            border: 2px solid #FFE0B2;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(255, 152, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+        .recipe-card h2 {
+            font-size: 24px;
+            color: #E65100;
+            padding-bottom: 10px;
+            margin-top:0;
+            border-bottom: 2px dashed #FFE0B2;
+        }
+        .recipe-card p {
+            margin: 8px 0;
+            flex-grow: 1;
+            color: #4E342E;
+        }
+        .card-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .card-buttons button {
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+        .detail-btn {
+            background-color: #0288D1;
+        }
+        .detail-btn:hover {
+            background-color: #0277BD;
+        }
+        .fav-btn {
+            background-color: #E65100;
+        }
+        
+        /* Favorites Section */
+        #favorites {
+            margin-top: 55px;
+            border-top: 4px double #FFB300;
+            padding-top: 38px;
+            width: 100%;
+            max-width: 1320px;
+            text-align: center;
+        }
+        #favorite-list { padding: 0; margin-top: 20px; }
+
+        /* Modal Styles */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.6);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 30px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 15px;
+            position: relative;
+            animation: slideDown 0.4s;
+        }
+        .close-btn {
+            color: #aaa;
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-btn:hover, .close-btn:focus {
+            color: #000;
+        }
+        #detail-nama { margin-top: 0; }
+        #detail-deskripsi {
+            line-height: 1.7;
+            margin: 10px 0 20px 0;
+        }
+        .modal-content h3 {
+            border-left: 5px solid #FF6F00;
+            padding-left: 10px;
+            margin: 20px 0 10px 0;
+        }
+        .modal-content ul, .modal-content ol {
+            padding-left: 25px;
+        }
+        @keyframes slideDown {
+            from {transform: translateY(-50px); opacity: 0;}
+            to {transform: translateY(0); opacity: 1;}
+        }
+        
+        /* Custom Alert Styles */
+        #custom-alert {
+            position: fixed;
+            top: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #e74c3c;
+            color: white;
+            padding: 16px 28px;
+            border-radius: 12px;
+            box-shadow: 0 12px 26px rgba(231, 76, 60, 0.8);
+            font-size: 17px;
+            font-weight: 700;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            z-index: 9999;
+        }
+        #custom-alert.show {
+            opacity: 1;
+        }
+        #custom-alert.success {
+            background-color: #27ae60;
+            box-shadow: 0 12px 26px rgba(39, 174, 96, 0.75);
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Virtual Assistant Chef</h1>
+    <div class="container">
+        <h2>Masukkan Daftar Bahan</h2>
+        <div id="ingredient-list">
+            <div class="input-row">
+                <input type="text" placeholder="Nama bahan (misal: ayam)" class="ingredient-name" aria-label="Input nama bahan makanan" />
+            </div>
+        </div>
+        <div class="button-group">
+            <button onclick="addIngredient()">+ Tambah Bahan</button>
+            <button onclick="resetAll()">Reset</button>
+            <button id="search-btn" onclick="getRecipes()">Cari Resep</button>
+        </div>
+    </div>
+
+    <div id="recipes-container"></div>
+
+    <div id="favorites">
+        <h2>Resep Favorit</h2>
+        <div id="favorite-list"></div>
+    </div>
+
+    <div id="recipe-detail-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="detail-nama"></h2>
+            <p id="detail-deskripsi"></p>
+            <h3>Bahan-bahan:</h3>
+            <ul id="detail-bahan"></ul>
+            <h3>Langkah-langkah:</h3>
+            <ol id="detail-langkah"></ol>
+        </div>
+    </div>
+
+    <div id="custom-alert" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+    <script>
+        const validIngredients = ["ayam", "ikan", "daging", "telur", "sosis", "nugget", "tahu", "tempe", "udang", "cumi", "kepiting", "kerang", "sarden", "kornet", "bakso", "daging sapi", "daging kambing", "daging ayam", "hati ayam","beras", "mie", "bihun", "kentang", "ubi", "singkong", "jagung", "roti", "tepung terigu", "tepung beras", "tepung tapioka", "tepung maizena", "pasta", "spaghetti", "makroni", "kwetiau", "tepung","sayur", "wortel", "kol", "sawi", "kangkung", "bayam", "buncis", "kacang panjang", "terong", "tomat", "timun", "labu", "jamur", "brokoli", "kembang kol", "daun bawang", "seledri", "kucai", "tauge","bawang merah", "bawang putih", "bawang bombay", "cabai", "merica", "ketumbar", "jahe", "kunyit", "lengkuas", "kencur", "sereh", "daun salam", "daun jeruk", "kayu manis", "pala", "cengkeh", "jintan", "kapulaga","garam", "gula", "kecap", "saus tomat", "saus sambal", "saus tiram", "kecap ikan", "kecap inggris", "kecap manis", "kecap asin", "terasi", "petis", "tauco", "kecap bangkok", "mayones","telur ayam", "telur bebek", "susu", "keju", "mentega", "margarin", "yogurt", "susu kental manis", "jando", "usus","minyak goreng", "minyak sayur", "minyak zaitun", "minyak wijen", "minyak kelapa", "lemak ayam","kacang tanah", "kacang hijau", "kacang merah", "kacang kedelai", "wijen", "biji bunga matahari","pisang", "apel", "jeruk", "mangga", "alpukat", "pepaya", "nanas", "melon", "semangka", "anggur","agar-agar", "coklat", "vanili", "pewarna makanan", "baking powder", "soda kue", "ragi", "tepung panir", "santan", "kelapa"];
+
+        let latestRecipes = [];
+
+        const modal = document.getElementById("recipe-detail-modal");
+        const closeModalBtn = document.querySelector(".close-btn");
+
+        function openDetailModal(index, source) {
+            const recipe = source === 'latest' ? latestRecipes[index] : JSON.parse(localStorage.getItem("favorites"))[index];
+            
+            // Populate modal with recipe data
+            document.getElementById('detail-nama').textContent = recipe.nama || 'Nama Resep Tidak Tersedia';
+            
+            const descElement = document.getElementById('detail-deskripsi');
+            if (recipe.deskripsi) {
+                descElement.textContent = recipe.deskripsi;
+                descElement.style.display = 'block';
+            } else {
+                descElement.textContent = '';
+                descElement.style.display = 'none';
+            }
+
+            const bahanList = document.getElementById('detail-bahan');
+            bahanList.innerHTML = '';
+            (recipe.bahan || []).forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                bahanList.appendChild(li);
+            });
+
+            const langkahList = document.getElementById('detail-langkah');
+            langkahList.innerHTML = '';
+            (recipe.langkah || []).forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                langkahList.appendChild(li);
+            });
+            
+            modal.style.display = "block";
+        }
+
+        closeModalBtn.onclick = () => modal.style.display = "none";
+        window.onclick = (event) => {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        function displayResults(recipes) {
+            const container = document.getElementById("recipes-container");
+            container.innerHTML = "";
+            latestRecipes = recipes;
+
+            if (recipes.length === 0) {
+                container.innerHTML = "<p>Tidak ada resep yang cocok ditemukan.</p>";
+                return;
+            }
+            recipes.forEach((recipe, index) => {
+                const card = document.createElement("div");
+                card.className = "recipe-card";
+                card.innerHTML = `
+                    <h2>${recipe.nama}</h2>
+                    <p><strong>Bahan Utama:</strong> ${(recipe.bahan || []).slice(0, 4).join(", ")}...</p>
+                    <div class="card-buttons">
+                        <button class="detail-btn" onclick="openDetailModal(${index}, 'latest')">Lihat Detail</button>
+                        <button class="fav-btn" onclick="saveToFavorites(${index})">⭐ Simpan</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function showFavorites() {
+            const container = document.getElementById("favorite-list");
+            const favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+            container.innerHTML = "";
+            
+            if (favorites.length === 0) {
+                container.innerHTML = "<p>Belum ada resep favorit.</p>";
+                return;
+            }
+            favorites.forEach((recipe, index) => {
+                const card = document.createElement("div");
+                card.className = "recipe-card";
+                card.innerHTML = `
+                    <h2>${recipe.nama}</h2>
+                    <p><strong>Bahan Utama:</strong> ${(recipe.bahan || []).slice(0, 4).join(", ")}...</p>
+                    <div class="card-buttons">
+                         <button class="detail-btn" onclick="openDetailModal(${index}, 'favorites')">Lihat Detail</button>
+                         <button class="fav-btn" onclick="removeFromFavorites(${index})">❌ Hapus</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        function getRecipes() {
+            const names = document.querySelectorAll(".ingredient-name");
+            const ingredients = Array.from(names).map(i => i.value.trim().toLowerCase()).filter(Boolean);
+
+            if (ingredients.length === 0) {
+                showCustomAlert("Mohon masukkan setidaknya satu bahan makanan yang valid.");
+                return;
+            }
+
+            const container = document.getElementById("recipes-container");
+            container.innerHTML = "";
+            setLoading(true);
+
+            fetch('/search', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ ingredients: ingredients.join(", ") }),
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                setLoading(false);
+                if (data.error) {
+                    showCustomAlert(`Error: ${data.error}`);
+                } else {
+                    displayResults(data);
+                }
+            })
+            .catch(error => {
+                setLoading(false);
+                showCustomAlert("Gagal mengambil data resep. Coba lagi nanti.");
+                console.error("Error fetching recipes:", error);
+            });
+        }
+
+        function saveToFavorites(index) {
+            const recipe = latestRecipes[index];
+            let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+            if (favorites.some(r => r.nama === recipe.nama)) {
+                showCustomAlert("Resep sudah ada di favorit.");
+                return;
+            }
+            favorites.push(recipe);
+            localStorage.setItem("favorites", JSON.stringify(favorites));
+            showFavorites();
+            showCustomAlert(`"${recipe.nama}" berhasil disimpan!`, "success");
+        }
+
+        function removeFromFavorites(index) {
+            let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+            const removedRecipeName = favorites[index].nama;
+            favorites.splice(index, 1);
+            localStorage.setItem("favorites", JSON.stringify(favorites));
+            showFavorites();
+            showCustomAlert(`"${removedRecipeName}" dihapus dari favorit.`, "success");
+        }
+        
+        // Helper Functions
+        function addIngredient() {
+            const list = document.getElementById("ingredient-list");
+            const div = document.createElement("div");
+            div.className = "input-row";
+            div.innerHTML = `<input type="text" placeholder="Nama bahan" class="ingredient-name" aria-label="Input nama bahan makanan baru" />`;
+            list.appendChild(div);
+            div.querySelector("input").focus();
+        }
+
+        function resetAll() {
+            const list = document.getElementById("ingredient-list");
+            list.innerHTML = `<div class="input-row"><input type="text" placeholder="Nama bahan (misal: ayam)" class="ingredient-name" aria-label="Input nama bahan makanan" /></div>`;
+            document.getElementById("recipes-container").innerHTML = "";
+        }
+
+        function showCustomAlert(message, type = "error") {
+            const alertBox = document.getElementById("custom-alert");
+            alertBox.textContent = message;
+            alertBox.className = 'custom-alert'; // Reset
+            alertBox.classList.add('show');
+            if (type === 'success') {
+                alertBox.classList.add('success');
+            }
+            setTimeout(() => {
+                alertBox.classList.remove('show', 'success');
+            }, 3500);
+        }
+
+        function setLoading(isLoading) {
+            const btn = document.getElementById("search-btn");
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = 'Mencari... <span id="loading-spinner"></span>';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = "Cari Resep";
+            }
+        }
+
+        window.onload = showFavorites;
+    </script>
+</body>
+</html>
